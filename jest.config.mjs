@@ -1,5 +1,7 @@
 import { pathsToModuleNameMapper } from "ts-jest";
-import tsconfig from "./tsconfig.json" assert { type: "json" };
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const tsconfig = require("./tsconfig.json");
 
 const { compilerOptions } = tsconfig;
 

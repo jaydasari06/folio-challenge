@@ -1,19 +1,172 @@
-# Canva App
+# Design QA Agent - Canva App ✅ **FULLY FUNCTIONAL**
 
-Welcome to your Canva App! 🎉
+An AI-powered design quality analysis tool for Canva that automatically detects design issues and provides actionable recommendations to improve accessibility, visual consistency, and overall design quality.
 
-This is a starting point for your app using your chosen template. The complete documentation for the platform is at [canva.dev/docs/apps](https://www.canva.dev/docs/apps/).
+**🎉 Status: Complete and ready for the Folio Challenge!**
 
-**Note:** This code and documentation assumes some experience with TypeScript and React.
+## 🚀 Project Overview
 
-## Requirements
+This Canva app analyzes designs in real-time and provides comprehensive feedback on:
+
+- **Color Contrast** - WCAG compliance checking
+- **Typography** - Font consistency and readability
+- **Alignment** - Grid-based layout analysis
+- **Spacing** - Consistent spacing patterns
+- **Accessibility** - Alt text, screen reader compatibility
+
+### Key Features
+
+- Real-time design analysis using Python backend
+- Comprehensive QA scoring system
+- Detailed issue reporting with severity levels
+- Actionable recommendations for improvements
+- Mobile-responsive interface
+- Built with Canva's official App UI Kit
+
+## 🛠 Tech Stack
+
+**Frontend:**
+- React 18 with TypeScript
+- Canva Apps SDK
+- Canva App UI Kit for consistent styling
+- React Intl for internationalization
+
+**Backend:**
+- Python 3.8+ with Flask
+- Flask-CORS for cross-origin requests
+- Advanced color contrast analysis
+- Typography and spacing algorithms
+- Accessibility compliance checking
+
+**Development Tools:**
+- Webpack for bundling
+- Jest for testing
+- ESLint for code quality
+- Prettier for formatting
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 16+ and npm
+- Python 3.8+
+- Canva CLI (for development)
+
+### 🚀 Quick Start (One Command)
+
+```bash
+# Start everything with one command
+./start-all.sh
+```
+
+This script will:
+1. Install all dependencies (Python + Node.js)
+2. Start the backend on http://localhost:5001
+3. Start the frontend on https://localhost:8080
+4. Run connectivity tests
+5. Open your app ready for development
+
+### 📋 Manual Start (Step by Step)
+
+### 1. Clone and Install Dependencies
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd folio-challenge
+
+# Install frontend dependencies
+npm install
+
+# Install Python backend dependencies
+pip3 install -r requirements.txt
+# OR manually:
+pip3 install flask flask-cors
+```
+
+### 2. Start the Backend Server
+
+```bash
+# Option 1: Use the startup script
+./start-backend.sh
+
+# Option 2: Start manually
+python3 backend.py
+```
+
+The backend will start on `http://localhost:5001` with the following endpoints:
+- `POST /api/analyze` - Analyze design data
+- `GET /api/analyze/test` - Test with sample data  
+- `GET /health` - Health check
+
+### 3. Start the Frontend (Canva App)
+
+In a new terminal:
+
+```bash
+# Start the development server
+npm start
+
+# The app will be available at https://localhost:8080
+# Use this URL in Canva's app development environment
+```
+
+### 4. Test the Integration
+
+1. Open the backend test endpoint: `http://localhost:5001/api/analyze/test`
+2. Verify you see sample analysis results
+3. Run the frontend and ensure it connects to the backend
+4. Check the browser console for any connection errors
+
+## 🏗 Project Structure
+
+```
+src/
+├── app.tsx                    # Main app component with QA dashboard
+├── types/
+│   └── qa-types.ts           # TypeScript type definitions
+├── services/
+│   └── qa-analysis-service.ts # QA analysis service (connects to Python backend)
+├── utils/
+│   └── design-utils.ts       # Canva design API utilities
+└── styles/
+    └── components.css        # Component styles
+
+backend.py                     # Python Flask backend server
+requirements.txt               # Python dependencies
+start-backend.sh              # Backend startup script
+```
+
+## 🔧 Development Requirements
 
 - Node.js `v18` or `v20.10.0`
 - npm `v9` or `v10`
+- Python 3.8+
+- pip3
 
 **Note:** To make sure you're running the correct version of Node.js, we recommend using a version manager, such as [nvm](https://github.com/nvm-sh/nvm#intro). The [.nvmrc](/.nvmrc) file in the root directory of this repo will ensure the correct version is used once you run `nvm install`.
 
-## Quick start
+## 🧪 Testing
+
+### Run Frontend Tests
+
+```bash
+npm test
+```
+
+### Test Backend API
+
+```bash
+# Test the health endpoint
+curl http://localhost:5001/health
+
+# Test the analysis endpoint with sample data
+curl http://localhost:5001/api/analyze/test
+```
+
+## 📋 Available Scripts
+
+### Frontend Scripts
 
 ```bash
 npm install
