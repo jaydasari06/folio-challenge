@@ -34,6 +34,7 @@ export const App = () => {
   const [qaReport, setQaReport] = useState<QAReport | null>(null);
   const [selectedTab, setSelectedTab] = useState("overview");
   const [hasDesignContent, setHasDesignContent] = useState(false);
+  const [hasRunAnalysis, setHasRunAnalysis] = useState(false);
   const intl = useIntl();
 
   useEffect(() => {
@@ -73,6 +74,7 @@ export const App = () => {
       if (response.success) {
         console.log("✅ Analysis successful, updating UI...");
         setQaReport(response.report);
+        setHasRunAnalysis(true); // Mark that analysis has been run
       } else {
         console.error("❌ QA Analysis failed:", response.error);
         // Show error state here
@@ -153,28 +155,30 @@ export const App = () => {
           </Rows>
         </Box>
 
-        {/* Instructions */}
-        <Box padding="2u">
-          <Alert tone="info">
-            <Rows spacing="1u">
-              <Text size="small">
-                <strong>💡 How to use this tool:</strong>
-              </Text>
-              <Text size="small">
-                1. <strong>Select elements</strong> in your design (text, images) to analyze real content
-              </Text>
-              <Text size="small">
-                2. Click "Run Design QA Analysis" to check for accessibility and quality issues
-              </Text>
-              <Text size="small">
-                3. Review the results and apply suggested improvements
-              </Text>
-              <Text size="small" tone="tertiary">
-                💡 No selection = demonstration mode with sample issues
-              </Text>
-            </Rows>
-          </Alert>
-        </Box>
+        {/* Instructions - only show if analysis hasn't been run yet */}
+        {!hasRunAnalysis && (
+          <Box padding="2u">
+            <Alert tone="info">
+              <Rows spacing="1u">
+                <Text size="small">
+                  <strong>💡 How to use this tool:</strong>
+                </Text>
+                <Text size="small">
+                  1. <strong>Select elements</strong> in your design (text, images) to analyze real content
+                </Text>
+                <Text size="small">
+                  2. Click "Run Design QA Analysis" to check for accessibility and quality issues
+                </Text>
+                <Text size="small">
+                  3. Review the results and apply suggested improvements
+                </Text>
+                <Text size="small" tone="tertiary">
+                  💡 No selection = demonstration mode with sample issues
+                </Text>
+              </Rows>
+            </Alert>
+          </Box>
+        )}
 
         {/* Main Action */}
         {!qaReport ? (
@@ -232,6 +236,7 @@ export const App = () => {
                   Issues 
                   <Badge text={qaReport.totalIssues.toString()} tone="critical" />
                 </Tab>
+                <Tab id="ai-insights">AI Insights</Tab>
                 <Tab id="recommendations">Tips</Tab>
               </TabList>
 
@@ -285,6 +290,74 @@ export const App = () => {
                         </AccordionItem>
                       ))}
                     </Accordion>
+                  </Rows>
+                </TabPanel>
+
+                {/* AI Insights Tab */}
+                <TabPanel id="ai-insights">
+                  <Rows spacing="2u">
+                    <Title size="small">AI-Powered Analysis</Title>
+                    {qaReport.aiAnalysis ? (
+                      qaReport.aiAnalysis.ai_enabled ? (
+                        <Rows spacing="3u">
+                          {/* AI Summary */}
+                          <Box>
+                            <Text size="small" variant="bold">AI Summary:</Text>
+                            <Alert tone="info" title="Design Assessment">
+                              {qaReport.aiAnalysis.summary}
+                            </Alert>
+                          </Box>
+
+                          {/* AI Suggestions */}
+                          {qaReport.aiAnalysis.suggestions && qaReport.aiAnalysis.suggestions.length > 0 && (
+                            <Box>
+                              <Text size="small" variant="bold">AI-Generated Suggestions:</Text>
+                              <Rows spacing="1u">
+                                {qaReport.aiAnalysis.suggestions.map((suggestion, index) => (
+                                  <Alert key={index} tone="positive" title={`Suggestion ${index + 1}`}>
+                                    {suggestion}
+                                  </Alert>
+                                ))}
+                              </Rows>
+                            </Box>
+                          )}
+
+                          {/* AI Overall Feedback */}
+                          <Box>
+                            <Text size="small" variant="bold">Detailed AI Feedback:</Text>
+                            <Text size="small" tone="secondary">
+                              {qaReport.aiAnalysis.overall_feedback}
+                            </Text>
+                          </Box>
+
+                          {/* Design Principles */}
+                          {qaReport.aiAnalysis.design_principles && qaReport.aiAnalysis.design_principles.length > 0 && (
+                            <Box>
+                              <Text size="small" variant="bold">Design Principles:</Text>
+                              <Rows spacing="1u">
+                                {qaReport.aiAnalysis.design_principles.map((principle, index) => (
+                                  <Text key={index} size="small">
+                                    • {principle}
+                                  </Text>
+                                ))}
+                              </Rows>
+                            </Box>
+                          )}
+                        </Rows>
+                      ) : (
+                        <Alert tone="warn" title="AI Analysis Disabled">
+                          {qaReport.aiAnalysis.summary}
+                          <br />
+                          <Text size="small" tone="secondary">
+                            To enable AI-powered insights, add your Gemini API key to the backend configuration.
+                          </Text>
+                        </Alert>
+                      )
+                    ) : (
+                      <Alert tone="info" title="AI Analysis Unavailable">
+                        AI analysis data is not available for this report.
+                      </Alert>
+                    )}
                   </Rows>
                 </TabPanel>
 

@@ -2,6 +2,7 @@
 """
 Design QA Agent Backend
 A Flask API server that analyzes design elements and provides QA feedback
+with AI-powered intelligent suggestions using Google Gemini API
 """
 
 from flask import Flask, request, jsonify
@@ -9,13 +10,286 @@ from flask_cors import CORS
 import json
 import time
 import re
+import os
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import colorsys
 import math
+from dotenv import load_dotenv
+import google.generativeai as genai
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend requests
+
+class AIDesignAnalyzer:
+    """AI-powered design analysis using Google Gemini API"""
+    
+    def __init__(self):
+        self.gemini_api_key = os.getenv('GEMINI_API_KEY')
+        if self.gemini_api_key and self.gemini_api_key != 'your_gemini_api_key_here':
+            genai.configure(api_key=self.gemini_api_key)
+            # Use the most stable and free model: gemini-1.5-flash
+            try:
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.ai_enabled = True
+                print("🤖 AI Analysis enabled with Google Gemini 1.5 Flash")
+            except Exception as e:
+                # Fallback to other models
+                try:
+                    self.model = genai.GenerativeModel('gemini-1.5-flash-8b')
+                    self.ai_enabled = True
+                    print("🤖 AI Analysis enabled with Google Gemini 1.5 Flash-8B")
+                except Exception as e2:
+                    self.ai_enabled = False
+                    print(f"⚠️  AI Analysis disabled - Could not initialize Gemini model: {str(e)[:100]}")
+        else:
+            self.ai_enabled = False
+            print("⚠️  AI Analysis disabled - no valid GEMINI_API_KEY found")
+    
+    def analyze_with_ai(self, elements: List[Dict], issues: List[Dict]) -> Dict:
+        """
+        Use AI to provide intelligent analysis and suggestions
+        """
+        if not self.ai_enabled:
+            return {
+                'ai_enabled': False,
+                'summary': 'AI analysis is disabled. Please set a valid GEMINI_API_KEY in your .env file.',
+                'suggestions': [],
+                'overall_feedback': 'Rule-based analysis completed successfully.'
+            }
+        
+        try:
+            # Prepare context for AI analysis
+            design_context = self._prepare_design_context(elements, issues)
+            
+            # Create AI prompt
+            prompt = self._create_analysis_prompt(design_context)
+            
+            print(f"🤖 Sending design context to Gemini AI for analysis...")
+            
+            # Call Gemini API
+            system_prompt = "You are an expert UI/UX designer and accessibility consultant. Analyze design elements and provide constructive, actionable feedback for improving design quality, usability, and accessibility."
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+            
+            response = self.model.generate_content(
+                full_prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.7,
+                    max_output_tokens=800,
+                )
+            )
+            
+            # Handle different response formats safely
+            ai_response = None
+            try:
+                # Try to get text from candidates first (more reliable)
+                if hasattr(response, 'candidates') and response.candidates and len(response.candidates) > 0:
+                    candidate = response.candidates[0]
+                    if hasattr(candidate, 'content') and candidate.content:
+                        if hasattr(candidate.content, 'parts') and candidate.content.parts and len(candidate.content.parts) > 0:
+                            part = candidate.content.parts[0]
+                            if hasattr(part, 'text'):
+                                ai_response = part.text
+                            else:
+                                ai_response = str(part)
+                        else:
+                            ai_response = str(candidate.content)
+                    else:
+                        ai_response = str(candidate)
+                
+                # If we still don't have a response, try other methods
+                if not ai_response:
+                    # Try direct string conversion
+                    response_str = str(response)
+                    if 'text=' in response_str:
+                        # Extract text from string representation
+                        import re
+                        text_match = re.search(r"text='([^']*)'", response_str)
+                        if text_match:
+                            ai_response = text_match.group(1)
+                        else:
+                            # Try a broader match
+                            text_match = re.search(r'text: ([^\n]+)', response_str)
+                            if text_match:
+                                ai_response = text_match.group(1)
+                
+                # Last resort: use full string representation
+                if not ai_response:
+                    ai_response = response_str[:500]  # First 500 chars
+                    
+            except Exception as parse_error:
+                ai_response = f"AI responded but extraction failed: {str(parse_error)}"
+                print(f"🐛 Response extraction error: {str(parse_error)}")
+                print(f"🐛 Response type: {type(response)}")
+                print(f"🐛 Will try string conversion...")
+                try:
+                    ai_response = str(response)[:500]
+                except:
+                    ai_response = "AI response could not be extracted"
+            
+            parsed_ai_response = self._parse_ai_response(ai_response)
+            
+            print(f"✨ Gemini AI analysis completed successfully")
+            
+            return {
+                'ai_enabled': True,
+                'summary': parsed_ai_response.get('summary', ''),
+                'suggestions': parsed_ai_response.get('suggestions', []),
+                'overall_feedback': parsed_ai_response.get('overall_feedback', ''),
+                'design_principles': parsed_ai_response.get('design_principles', [])
+            }
+            
+        except Exception as e:
+            print(f"❌ AI analysis failed: {str(e)}")
+            return {
+                'ai_enabled': False,
+                'summary': f'AI analysis failed: {str(e)}',
+                'suggestions': [],
+                'overall_feedback': 'Falling back to rule-based analysis only.'
+            }
+    
+    def _prepare_design_context(self, elements: List[Dict], issues: List[Dict]) -> Dict:
+        """Prepare design context for AI analysis"""
+        
+        # Categorize elements
+        text_elements = [e for e in elements if e.get('type') == 'text']
+        image_elements = [e for e in elements if e.get('type') == 'image']
+        shape_elements = [e for e in elements if e.get('type') in ['rectangle', 'circle', 'shape']]
+        
+        # Categorize issues by type
+        issue_categories = {}
+        for issue in issues:
+            category = issue.get('category', 'general')
+            if category not in issue_categories:
+                issue_categories[category] = []
+            issue_categories[category].append(issue)
+        
+        return {
+            'element_count': len(elements),
+            'text_elements': len(text_elements),
+            'image_elements': len(image_elements),
+            'shape_elements': len(shape_elements),
+            'total_issues': len(issues),
+            'issue_categories': issue_categories,
+            'elements_sample': elements[:5]  # First 5 elements for context
+        }
+    
+    def _create_analysis_prompt(self, context: Dict) -> str:
+        """Create a detailed prompt for AI analysis"""
+        
+        prompt = f"""
+        Please analyze this design and provide expert feedback:
+
+        DESIGN OVERVIEW:
+        - Total elements: {context['element_count']}
+        - Text elements: {context['text_elements']}
+        - Images: {context['image_elements']} 
+        - Shapes/Graphics: {context['shape_elements']}
+        - Total issues found: {context['total_issues']}
+
+        DETECTED ISSUES BY CATEGORY:
+        """
+        
+        for category, issues in context['issue_categories'].items():
+            prompt += f"\n{category.upper()} ({len(issues)} issues):\n"
+            for issue in issues[:3]:  # Limit to first 3 issues per category
+                prompt += f"- {issue.get('message', 'Issue detected')}\n"
+        
+        prompt += f"""
+        
+        SAMPLE ELEMENTS:
+        {json.dumps(context['elements_sample'], indent=2)}
+
+        Please provide your analysis in this JSON format:
+        {{
+            "summary": "Brief overall assessment of the design quality and main concerns",
+            "suggestions": [
+                "Specific actionable suggestion 1",
+                "Specific actionable suggestion 2",
+                "Specific actionable suggestion 3"
+            ],
+            "overall_feedback": "Comprehensive feedback on design strengths and areas for improvement",
+            "design_principles": [
+                "Key design principle or best practice recommendation 1",
+                "Key design principle or best practice recommendation 2"
+            ]
+        }}
+
+        Focus on practical, actionable advice that will genuinely improve the design's usability, accessibility, and visual appeal.
+        """
+        
+        return prompt
+    
+    def _parse_ai_response(self, ai_response) -> Dict:
+        """Parse AI response, handling both JSON and plain text responses"""
+        try:
+            # Ensure ai_response is a string
+            if not isinstance(ai_response, str):
+                ai_response = str(ai_response)
+            
+            # Try to extract JSON from the response
+            json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group())
+            else:
+                # If no JSON found, create structured response from plain text
+                lines = ai_response.split('\n') if isinstance(ai_response, str) else [str(ai_response)]
+                return {
+                    'summary': 'AI provided design analysis',
+                    'suggestions': lines[:5],  # First 5 lines as suggestions
+                    'overall_feedback': ai_response,
+                    'design_principles': []
+                }
+        except Exception as e:
+            # Fallback for any parsing errors
+            print(f"🐛 AI response parsing error: {str(e)}")
+            return {
+                'summary': 'AI analysis completed',
+                'suggestions': ['AI provided design feedback'],
+                'overall_feedback': str(ai_response)[:500] if ai_response else 'No response',  # First 500 chars
+                'design_principles': []
+            }
+
+    def test_gemini_connection(self):
+        """Test Gemini API connection"""
+        if not self.ai_enabled:
+            return False
+        
+        try:
+            # Test a simple generation
+            test_response = self.model.generate_content("Hello, respond with 'AI working'")
+            
+            # Use the same robust parsing logic as the main analysis
+            response_text = None
+            try:
+                if hasattr(test_response, 'candidates') and test_response.candidates and len(test_response.candidates) > 0:
+                    candidate = test_response.candidates[0]
+                    if hasattr(candidate, 'content') and candidate.content:
+                        if hasattr(candidate.content, 'parts') and candidate.content.parts and len(candidate.content.parts) > 0:
+                            part = candidate.content.parts[0]
+                            if hasattr(part, 'text'):
+                                response_text = part.text
+                            else:
+                                response_text = str(part)
+                        else:
+                            response_text = str(candidate.content)
+                    else:
+                        response_text = str(candidate)
+                
+                if not response_text:
+                    response_text = str(test_response)[:100]
+                    
+            except Exception as parse_error:
+                response_text = f"Parsing failed: {str(parse_error)}"
+            
+            print(f"🧪 Test response: {response_text[:50]}...")
+            return True
+        except Exception as e:
+            print(f"❌ Gemini test failed: {str(e)}")
+            return False
 
 class DesignQAAnalyzer:
     """Main class for analyzing design elements and generating QA reports"""
@@ -28,11 +302,14 @@ class DesignQAAnalyzer:
             'accessibility': {'require_alt_text': True},
             'alignment': {'tolerance': 5}  # pixels
         }
+        
+        # Initialize AI analyzer
+        self.ai_analyzer = AIDesignAnalyzer()
 
     def analyze_design(self, elements: List[Dict], options: Dict) -> Dict:
         """
         Main analysis function that processes design elements
-        and returns a comprehensive QA report
+        and returns a comprehensive QA report with AI-powered insights
         """
         start_time = time.time()
         
@@ -65,6 +342,10 @@ class DesignQAAnalyzer:
         # Calculate overall score
         overall_score = self._calculate_score(issues)
         
+        # Perform AI analysis
+        print(f"🤖 Running AI analysis...")
+        ai_analysis = self.ai_analyzer.analyze_with_ai(transformed_elements, issues)
+        
         # Generate report
         analysis_time = round(time.time() - start_time, 2)
         
@@ -75,7 +356,9 @@ class DesignQAAnalyzer:
             'passed': max(0, 17 - len(issues)),  # Assuming 17 total checks
             'failed': len(issues),
             'analysisTime': analysis_time,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            # Add AI analysis results
+            'aiAnalysis': ai_analysis
         }
         
         return report
@@ -519,6 +802,32 @@ def test_analysis():
         'report': report,
         'sample_data': sample_elements
     })
+
+@app.route('/api/test-ai', methods=['GET'])
+def test_ai_connection():
+    """Test AI connection endpoint"""
+    try:
+        if not qa_analyzer.ai_analyzer.ai_enabled:
+            return jsonify({
+                'success': False,
+                'message': 'AI is not enabled',
+                'details': 'Check GEMINI_API_KEY in .env file'
+            })
+        
+        # Test with a simple prompt
+        test_result = qa_analyzer.ai_analyzer.test_gemini_connection()
+        
+        return jsonify({
+            'success': test_result,
+            'message': 'AI connection test completed',
+            'ai_enabled': qa_analyzer.ai_analyzer.ai_enabled
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'AI test failed: {str(e)}'
+        }), 500
 
 if __name__ == '__main__':
     print("🚀 Design QA Agent Backend Starting...")

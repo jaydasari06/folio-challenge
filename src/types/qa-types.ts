@@ -16,6 +16,14 @@ export interface QAIssue {
   };
 }
 
+export interface AIAnalysis {
+  ai_enabled: boolean;
+  summary: string;
+  suggestions: string[];
+  overall_feedback: string;
+  design_principles?: string[];
+}
+
 export interface QAReport {
   overallScore: number;
   totalIssues: number;
@@ -24,6 +32,7 @@ export interface QAReport {
   failed: number;
   analysisTime: number;
   timestamp: string;
+  aiAnalysis?: AIAnalysis;
 }
 
 export interface DesignElement {

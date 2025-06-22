@@ -6,20 +6,23 @@ An AI-powered design quality analysis tool for Canva that automatically detects 
 
 ## 🚀 Project Overview
 
-This Canva app analyzes designs in real-time and provides comprehensive feedback on:
+This Canva app analyzes designs using both rule-based algorithms AND AI-powered insights to provide comprehensive feedback on:
 
 - **Color Contrast** - WCAG compliance checking
 - **Typography** - Font consistency and readability
 - **Alignment** - Grid-based layout analysis
 - **Spacing** - Consistent spacing patterns
 - **Accessibility** - Alt text, screen reader compatibility
+- **🤖 AI Analysis** - Intelligent context-aware suggestions using Google Gemini
 
 ### Key Features
 
 - Real-time design analysis using Python backend
+- **AI-powered insights** using Google Gemini API (free tier)
 - Comprehensive QA scoring system
 - Detailed issue reporting with severity levels
 - Actionable recommendations for improvements
+- AI-generated design suggestions and feedback
 - Mobile-responsive interface
 - Built with Canva's official App UI Kit
 
@@ -34,9 +37,39 @@ This Canva app analyzes designs in real-time and provides comprehensive feedback
 **Backend:**
 - Python 3.8+ with Flask
 - Flask-CORS for cross-origin requests
+- **Google Gemini AI** for intelligent analysis
 - Advanced color contrast analysis
 - Typography and spacing algorithms
 - Accessibility compliance checking
+
+## 🤖 AI Setup (Free!)
+
+To enable AI-powered insights, get a free Gemini API key:
+
+### 1. Get Your Free API Key
+1. Visit [Google AI Studio](https://makersuite.google.com/)
+2. Sign in with your Google account
+3. Click "Get API key" in navigation
+4. Click "Create API key in new project"
+5. Copy the generated API key
+
+### 2. Configure the API Key
+Add your API key to `.env`:
+```bash
+GEMINI_API_KEY=your_actual_api_key_here
+```
+
+### 3. Restart the Backend
+```bash
+python backend.py
+```
+
+**Note:** The app works perfectly without the API key (rule-based analysis only). With the API key, you get additional AI-powered insights!
+
+### Free Tier Limits
+- 60 requests per minute
+- 1,500 requests per day
+- Perfect for development and demo!
 
 **Development Tools:**
 - Webpack for bundling

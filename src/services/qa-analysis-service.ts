@@ -208,7 +208,9 @@ export class QAAnalysisService {
             passed: report.passed || 0,
             failed: report.failed || 0,
             analysisTime: report.analysisTime || 0,
-            timestamp: report.timestamp || new Date().toISOString()
+            timestamp: report.timestamp || new Date().toISOString(),
+            // Include AI analysis data from backend
+            aiAnalysis: report.aiAnalysis
           }
         };
       }
