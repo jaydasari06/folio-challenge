@@ -1,37 +1,63 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { App } from '../app';
 import { qaAnalysisService } from '../services/qa-analysis-service';
+import { TestAppI18nProvider } from '@canva/app-i18n-kit';
+import { TestAppUiProvider } from '@canva/app-ui-kit';
+import { getCurrentPageContext } from '@canva/design';
 
-// Mock the Canva modules
-jest.mock('@canva/platform', () => ({
-  requestOpenExternalUrl: jest.fn(),
+// Mock the QA analysis service
+jest.mock('../services/qa-analysis-service', () => ({
+  qaAnalysisService: {
+    analyzeDesign: jest.fn(),
+  },
 }));
 
-jest.mock('@canva/design', () => ({
-  getCurrentPageContext: jest.fn(() => 
-    Promise.resolve({ 
-      dimensions: { width: 800, height: 600 } 
-    })
-  ),
+jest.mock('../utils/design-utils', () => ({
+  initializeSelectionListeners: jest.fn(),
+  createAnalysisRequest: jest.fn(() => Promise.resolve({
+    designId: 'test-design',
+    elements: [],
+    analysisOptions: {
+      checkContrast: true,
+      checkAlignment: true,
+      checkSpacing: true,
+      checkTypography: true,
+      checkAccessibility: true
+    }
+  })),
 }));
-
-jest.mock('../services/qa-analysis-service');
-jest.mock('../utils/design-utils');
 
 const mockQaAnalysisService = qaAnalysisService as jest.Mocked<typeof qaAnalysisService>;
+const mockGetCurrentPageContext = jest.mocked(getCurrentPageContext);
+
+// Helper function to render App with required providers
+const renderApp = () => {
+  return render(
+    <TestAppI18nProvider>
+      <TestAppUiProvider>
+        <App />
+      </TestAppUiProvider>
+    </TestAppI18nProvider>
+  );
+};
 
 describe('Design QA Agent App', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
+    // Set up default mock for getCurrentPageContext
+    mockGetCurrentPageContext.mockResolvedValue({ 
+      dimensions: { width: 800, height: 600 } 
+    });
   });
 
   test('renders the main title', () => {
-    render(<App />);
+    renderApp();
     expect(screen.getByText('Design QA Agent')).toBeInTheDocument();
   });
 
   test('shows run analysis button when no report exists', async () => {
-    render(<App />);
+    renderApp();
     
     await waitFor(() => {
       expect(screen.getByText('Run Design QA Analysis')).toBeInTheDocument();
@@ -63,7 +89,7 @@ describe('Design QA Agent App', () => {
       report: mockReport
     });
 
-    render(<App />);
+    renderApp();
     
     await waitFor(() => {
       const button = screen.getByText('Run Design QA Analysis');
@@ -100,7 +126,7 @@ describe('Design QA Agent App', () => {
       report: mockReport
     });
 
-    render(<App />);
+    renderApp();
     
     await waitFor(() => {
       const button = screen.getByText('Run Design QA Analysis');
@@ -138,7 +164,7 @@ describe('Design QA Agent App', () => {
       report: mockReport
     });
 
-    render(<App />);
+    renderApp();
     
     await waitFor(() => {
       const button = screen.getByText('Run Design QA Analysis');
@@ -146,9 +172,9 @@ describe('Design QA Agent App', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Overview')).toBeInTheDocument();
-      expect(screen.getByText('Issues')).toBeInTheDocument();
-      expect(screen.getByText('Tips')).toBeInTheDocument();
+      expect(screen.getAllByText('Overview')).toHaveLength(2); // There are two Overview elements in the tab
+      expect(screen.getByRole('tab', { name: /Issues/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /Tips/i })).toBeInTheDocument();
     });
   });
 
@@ -167,7 +193,7 @@ describe('Design QA Agent App', () => {
       error: 'Analysis failed'
     });
 
-    render(<App />);
+    renderApp();
     
     await waitFor(() => {
       const button = screen.getByText('Run Design QA Analysis');
@@ -176,16 +202,15 @@ describe('Design QA Agent App', () => {
 
     // The app should handle the error gracefully without crashing
     await waitFor(() => {
-      expect(screen.getByText('Run New Analysis')).toBeInTheDocument();
+      expect(screen.getByText('Run Design QA Analysis')).toBeInTheDocument();
     });
   });
 
   test('shows empty state when no design content', async () => {
     // Mock getCurrentPageContext to return no dimensions
-    const { getCurrentPageContext } = require('@canva/design');
-    getCurrentPageContext.mockResolvedValue({ dimensions: null });
+    mockGetCurrentPageContext.mockResolvedValue({ dimensions: undefined });
 
-    render(<App />);
+    renderApp();
 
     await waitFor(() => {
       expect(screen.getByText('No design detected')).toBeInTheDocument();
