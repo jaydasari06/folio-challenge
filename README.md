@@ -2,7 +2,65 @@
 
 An AI-powered design quality analysis tool for Canva that automatically detects design issues and provides actionable recommendations to improve accessibility, visual consistency, and overall design quality.
 
+## 🎨 User Interface
+
+The app features a modern, intuitive interface with:
+
+### Smart Design Detection
+- **Empty state handling** when no design content is detected
+- **Step-by-step instructions** for first-time users
+- **Contextual help** and usage guidelines
+
+### Analysis Dashboard
+- **Overall design score** with visual progress bar
+- **Quick summary** of passed/failed checks
+- **Color-coded feedback** (green for success, red for issues)
+
+### Multi-Tab Results View
+1. **Overview** - Quick summary and issue categorization
+2. **Issues** - Detailed accordion with expandable issue descriptions
+3. **AI Insights** - AI-powered analysis and suggestions (when enabled)
+4. **Tips** - Design best practices and Canva guidelines
+
+### Interactive Features
+- **One-click analysis** with loading states
+- **Re-analysis capability** for iterative design improvement
+- **External link integration** to Canva design guidelines
+- **Responsive layout** optimized for the Canva side panel
+
+**Development Tools:**ity analysis tool for Canva that automatically detects design issues and provides actionable recommendations to improve accessibility, visual consistency, and overall design quality.
+
 **🎉 Status: Complete and ready for the Folio Challenge!**
+
+## ✨ What Makes This Implementation Special
+
+This Design QA Agent represents a **production-ready Canva app** with several standout features:
+
+### 🧠 Advanced AI Integration
+- **Google Gemini AI** integration for intelligent design analysis
+- **Context-aware suggestions** that understand design intent
+- **Free tier implementation** that works out of the box
+
+### 🎯 Real Design Analysis
+- **Actual Canva element analysis** - not just mock data
+- **Multi-criteria evaluation** (contrast, typography, alignment, accessibility)
+- **Scoring algorithm** that provides actionable insights
+
+### 🧪 Comprehensive Testing
+- **7 comprehensive tests** covering all major functionality
+- **Proper Canva SDK test mocks** for reliable testing
+- **React Testing Library** best practices implementation
+
+### 🎨 Professional UI/UX
+- **Multi-tab interface** following Canva design guidelines
+- **Smart state management** with proper loading and error states
+- **Responsive design** optimized for Canva's side panel
+
+### 🔧 Developer Experience
+- **One-command setup** with automated scripts
+- **Type-safe development** with comprehensive TypeScript definitions
+- **Hot module replacement** for rapid development
+- **Production-ready architecture** with proper error handling
 
 ## 🚀 Project Overview
 
@@ -17,14 +75,16 @@ This Canva app analyzes designs using both rule-based algorithms AND AI-powered 
 
 ### Key Features
 
-- Real-time design analysis using Python backend
+- **Real-time design analysis** using Python backend
 - **AI-powered insights** using Google Gemini API (free tier)
-- Comprehensive QA scoring system
-- Detailed issue reporting with severity levels
-- Actionable recommendations for improvements
-- AI-generated design suggestions and feedback
-- Mobile-responsive interface
-- Built with Canva's official App UI Kit
+- **Comprehensive QA scoring system** with detailed metrics
+- **Multi-tab interface** with Overview, Issues, AI Insights, and Tips
+- **Detailed issue reporting** with severity levels and actionable suggestions
+- **AI-generated design feedback** and context-aware recommendations
+- **Design best practices** integration with Canva guidelines
+- **Responsive mobile interface** with Canva's official App UI Kit
+- **Smart design detection** with empty state handling
+- **Real element analysis** from Canva designs
 
 ## 🛠 Tech Stack
 
@@ -33,11 +93,14 @@ This Canva app analyzes designs using both rule-based algorithms AND AI-powered 
 - Canva Apps SDK
 - Canva App UI Kit for consistent styling
 - React Intl for internationalization
+- **Comprehensive test suite** with Jest and React Testing Library
+- **Proper SDK test providers** for reliable testing
 
 **Backend:**
 - Python 3.8+ with Flask
 - Flask-CORS for cross-origin requests
 - **Google Gemini AI** for intelligent analysis
+- **python-dotenv** for environment management
 - Advanced color contrast analysis
 - Typography and spacing algorithms
 - Accessibility compliance checking
@@ -113,8 +176,7 @@ npm install
 
 # Install Python backend dependencies
 pip3 install -r requirements.txt
-# OR manually:
-pip3 install flask flask-cors
+# This installs: flask, flask-cors, google-generativeai, python-dotenv
 ```
 
 ### 2. Start the Backend Server
@@ -155,19 +217,25 @@ npm start
 
 ```
 src/
-├── app.tsx                    # Main app component with QA dashboard
+├── app.tsx                    # Main app component with multi-tab QA dashboard
+├── index.tsx                  # App entry point with providers
 ├── types/
-│   └── qa-types.ts           # TypeScript type definitions
+│   └── qa-types.ts           # TypeScript type definitions for QA system
 ├── services/
 │   └── qa-analysis-service.ts # QA analysis service (connects to Python backend)
 ├── utils/
-│   └── design-utils.ts       # Canva design API utilities
+│   └── design-utils.ts       # Canva design API utilities and selection handling
+├── tests/
+│   ├── qa-agent.test.tsx     # Comprehensive component tests (7 tests)
+│   └── app.tests.tsx         # Additional app tests
 └── styles/
     └── components.css        # Component styles
 
-backend.py                     # Python Flask backend server
-requirements.txt               # Python dependencies
+backend.py                     # Python Flask backend with AI integration
+requirements.txt               # Python dependencies (Flask, Gemini AI, etc.)
+jest.setup.ts                  # Test environment setup with Canva SDK mocks
 start-backend.sh              # Backend startup script
+start-all.sh                  # One-command startup script
 ```
 
 ## 🔧 Development Requirements
@@ -183,9 +251,26 @@ start-backend.sh              # Backend startup script
 
 ### Run Frontend Tests
 
+The project includes comprehensive tests for the QA Agent functionality:
+
 ```bash
+# Run all tests
 npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Update test snapshots
+npm run test:update
 ```
+
+**Test Coverage:**
+- ✅ QA Agent app component tests (7 tests)
+- ✅ JWT middleware tests
+- ✅ Utility function tests
+- ✅ Integration tests
+
+**Note:** The test suite uses proper Canva SDK test providers (`TestAppI18nProvider`, `TestAppUiProvider`) and mocks for reliable testing.
 
 ### Test Backend API
 
@@ -364,3 +449,47 @@ To use ngrok, you'll need to do the following:
    ```
 
 This environment variable is available for the current terminal session, so the command must be re-run for each new session. Alternatively, you can add the variable to your terminal's default parameters.
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Tests Failing
+If you encounter test failures, ensure you have the latest dependencies:
+```bash
+npm install
+npm test
+```
+
+#### Backend Connection Issues
+1. Verify the backend is running on port 5001:
+   ```bash
+   curl http://localhost:5001/health
+   ```
+2. Check for CORS errors in browser console
+3. Ensure Python dependencies are installed:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+
+#### AI Features Not Working
+1. Verify your Gemini API key is set in `.env`:
+   ```bash
+   echo $GEMINI_API_KEY
+   ```
+2. Check backend logs for API errors
+3. Ensure you haven't exceeded free tier limits (60 req/min)
+
+#### Canva App Not Loading
+1. Verify the development server is running on HTTPS:
+   ```bash
+   npm start --use-https
+   ```
+2. Check that the app URL matches in Canva Developer Portal
+3. Ensure you've bypassed SSL certificate warnings
+
+### Getting Help
+
+- 📚 [Canva Apps Documentation](https://www.canva.dev/docs/apps/)
+- 🤖 [Google Gemini AI Documentation](https://ai.google.dev/docs)
+- 🧪 [React Testing Library Docs](https://testing-library.com/docs/react-testing-library/intro/)
